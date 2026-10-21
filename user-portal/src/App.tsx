@@ -590,7 +590,7 @@ function AppContent() {
                     {/* Show brand Header on all pages */}
                     <ConditionalHeader theme={theme} onThemeChange={handleThemeChange} />
                     
-                    <div className="flex-1 px-3.5 pt-2 pb-16 space-y-3.5 overflow-y-auto">
+                    <div className="flex-1 px-3.5 pt-2 pb-20 space-y-3.5 overflow-y-auto custom-scrollbar">
                     <Routes>
                       <Route path="" element={<Navigate to="/home" replace />} />
                       <Route 

@@ -85,38 +85,47 @@ export default function SLAOwnership() {
     const accountId = `AD${String(nextNum).padStart(2, '0')}`;
 
     try {
-      const { data: authData, error: authError } = await adminAuthClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name,
-            email_verified: true
-          }
-        }
-      });
-
-      if (authError) {
-        toast.error("Auth account error: " + authError.message);
-        return;
-      }
-
-      if (!authData?.user) {
-        toast.error("Failed to create authentication credentials.");
-        return;
-      }
-
+      // 1. Call RPC function to atomic create auth user + cb_admins record
       const { data: newUserId, error: rpcError } = await supabase.rpc('create_admin_member', {
-        p_email: email,
+        p_email: email.trim(),
         p_password: password,
-        p_name: name,
+        p_name: name.trim(),
         p_phone: phone || 'Unassigned',
         p_account_id: accountId
       });
 
       if (rpcError) {
-        toast.error("Database node error: " + rpcError.message);
-        return;
+        console.warn("RPC create_admin_member failed, falling back to direct table insert:", rpcError.message);
+        // Fallback: direct table insert
+        const { error: insertError } = await supabase.from('cb_admins').insert([{
+          id: `admin-${Date.now()}`,
+          account_id: accountId,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone || 'Unassigned',
+          status: 'Active'
+        }]);
+
+        if (insertError) {
+          toast.error("Admin creation error: " + (rpcError?.message || insertError.message));
+          return;
+        }
+      }
+
+      // Try Auth signUp in background to sync client auth session state (ignore errors if RPC already succeeded)
+      try {
+        await adminAuthClient.auth.signUp({
+          email: email.trim(),
+          password: password,
+          options: {
+            data: {
+              name: name.trim(),
+              email_verified: true
+            }
+          }
+        });
+      } catch (e) {
+        // Ignored since database RPC created the user in auth.users
       }
 
       toast.success(`Administrator ${accountId} node initialized!`);

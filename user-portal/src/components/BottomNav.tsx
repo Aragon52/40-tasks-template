@@ -46,7 +46,7 @@ export default function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 mx-auto w-full max-w-md h-14 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 px-3 z-50 flex items-center justify-between shadow-lg">
+    <nav className="fixed bottom-0 inset-x-0 mx-auto w-full max-w-md h-14 pb-[env(safe-area-inset-bottom)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 px-3 z-50 flex items-center justify-between shadow-lg">
       {navItems.map((item, index) => {
         const active = currentPath.startsWith(item.path);
 

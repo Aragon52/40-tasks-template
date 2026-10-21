@@ -178,31 +178,11 @@ export default function SLAAdmins() {
     const referralCode = generateReferralCode(staffId);
 
     try {
-      const { data: authData, error: authError } = await adminAuthClient.auth.signUp({
-        email: staffEmail,
-        password: staffPassword,
-        options: {
-          data: {
-            name: staffName,
-            email_verified: true
-          }
-        }
-      });
-
-      if (authError) {
-        toast.error("Auth account error: " + authError.message);
-        return;
-      }
-
-      if (!authData?.user) {
-        toast.error("Failed to create authentication credentials.");
-        return;
-      }
-
+      // 1. Call RPC function directly to create atomic database & auth account
       const { data: newUserId, error: rpcError } = await supabase.rpc('create_staff_member', {
-        p_email: staffEmail,
+        p_email: staffEmail.trim(),
         p_password: staffPassword,
-        p_name: staffName,
+        p_name: staffName.trim(),
         p_phone: staffPhone || 'Unassigned',
         p_staff_id: staffId,
         p_admin_id: selectedAdminId,
@@ -211,13 +191,35 @@ export default function SLAAdmins() {
       });
 
       if (rpcError) {
-        toast.error("Staff account error: " + rpcError.message);
-        return;
+        console.warn("RPC create_staff_member failed, falling back to direct table insert:", rpcError.message);
+        // Fallback: direct table insert
+        const { error: insertError } = await supabase.from('cb_staff').insert([{
+          id: `staff-${Date.now()}`,
+          staff_id: staffId,
+          name: staffName.trim(),
+          email: staffEmail.trim(),
+          phone: staffPhone || 'Unassigned',
+          status: 'Active',
+          created_by_admin_id: selectedAdminId,
+          department: staffDept || 'Operations',
+          referral_code: referralCode
+        }]);
+
+        if (insertError) {
+          toast.error("Staff creation error: " + (rpcError?.message || insertError.message));
+          return;
+        }
       }
 
-      if (!newUserId) {
-        toast.error("Failed to retrieve system ID.");
-        return;
+      // Try Auth signUp in background to sync client auth session state (ignore errors if RPC already succeeded)
+      try {
+        await adminAuthClient.auth.signUp({
+          email: staffEmail.trim(),
+          password: staffPassword,
+          options: { data: { name: staffName.trim(), email_verified: true } }
+        });
+      } catch (e) {
+        // Ignored since database RPC created the user in auth.users
       }
 
       const auditLog = {

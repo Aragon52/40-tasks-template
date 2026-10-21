@@ -832,7 +832,7 @@ export default function UserManagement() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6">
+            <div className="sticky -bottom-10 bg-white dark:bg-slate-950 pt-4 pb-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 z-10 -mx-6 px-6 -mb-6">
               <Button variant="secondary" onClick={() => setEditUser(null)}>Cancel</Button>
               <Button 
                 onClick={handleSaveEdit} 

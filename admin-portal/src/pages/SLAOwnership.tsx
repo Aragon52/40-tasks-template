@@ -346,7 +346,7 @@ export default function SLAOwnership() {
               <Input label="NODE ACCESS PASSWORD" type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" icon={<Lock className="w-4 h-4" />} />
             </div>
 
-            <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="sticky -bottom-10 bg-white dark:bg-slate-950 pt-4 pb-4 border-t border-slate-100 dark:border-slate-800 flex gap-3 z-10 -mx-6 px-6 -mb-6">
                <Button variant="secondary" onClick={() => setShowModal(false)} className="flex-1">Cancel</Button>
                <Button type="submit" loading={isCreating} className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 text-[11px] font-black uppercase tracking-widest">
                   Commission Admin Node

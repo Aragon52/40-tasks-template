@@ -148,11 +148,11 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-hidden">
-      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative w-full ${sizes[size]} max-h-[92dvh] flex flex-col bg-white dark:bg-slate-950 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 fade-in duration-200 my-auto`}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className={`relative w-full ${sizes[size]} max-h-[88dvh] flex flex-col bg-white dark:bg-slate-950 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 fade-in duration-200 my-auto z-10`}>
         {title && (
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-950 sticky top-0 z-10">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-950 sticky top-0 z-20">
             <h3 className="font-bold text-lg text-slate-900 dark:text-white">{title}</h3>
             <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-full transition-colors cursor-pointer text-slate-500">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -162,7 +162,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             </button>
           </div>
         )}
-        <div className="p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 min-h-0 overscroll-contain pb-10 custom-scrollbar">{children}</div>
       </div>
     </div>
   );

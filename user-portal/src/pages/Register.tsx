@@ -325,7 +325,6 @@ export default function Register() {
         nickname: computedUsername,
         level: 'FREE VIP',
         rate: '$/1.0000',
-        acceptance: 'Allowed',
         online: 'Online',
         balance: 0.00,
         frozen: 0.00,

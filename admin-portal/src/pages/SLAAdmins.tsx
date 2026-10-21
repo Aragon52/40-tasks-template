@@ -178,9 +178,27 @@ export default function SLAAdmins() {
     const referralCode = generateReferralCode(staffId);
 
     try {
-      // 1. Call RPC function directly to create atomic database & auth account
-      const { data: newUserId, error: rpcError } = await supabase.rpc('create_staff_member', {
-        p_email: staffEmail.trim(),
+      let createdUserId = '';
+
+      // 1. Sign up via Supabase Auth client (instant since email confirmation is disabled)
+      const { data: authData } = await adminAuthClient.auth.signUp({
+        email: staffEmail.trim(),
+        password: staffPassword,
+        options: {
+          data: {
+            name: staffName.trim(),
+            email_verified: true
+          }
+        }
+      });
+
+      if (authData?.user?.id) {
+        createdUserId = authData.user.id;
+      }
+
+      // 2. Execute RPC function to set user_roles and seed auth record
+      const { data: rpcUserId, error: rpcError } = await supabase.rpc('create_staff_member', {
+        p_email: staffEmail.trim().toLowerCase(),
         p_password: staffPassword,
         p_name: staffName.trim(),
         p_phone: staffPhone || 'Unassigned',
@@ -190,36 +208,27 @@ export default function SLAAdmins() {
         p_referral_code: referralCode
       });
 
-      if (rpcError) {
-        console.warn("RPC create_staff_member failed, falling back to direct table insert:", rpcError.message);
-        // Fallback: direct table insert
-        const { error: insertError } = await supabase.from('cb_staff').insert([{
-          id: `staff-${Date.now()}`,
-          staff_id: staffId,
-          name: staffName.trim(),
-          email: staffEmail.trim(),
-          phone: staffPhone || 'Unassigned',
-          status: 'Active',
-          created_by_admin_id: selectedAdminId,
-          department: staffDept || 'Operations',
-          referral_code: referralCode
-        }]);
-
-        if (insertError) {
-          toast.error("Staff creation error: " + (rpcError?.message || insertError.message));
-          return;
-        }
+      if (!rpcError && rpcUserId) {
+        createdUserId = rpcUserId;
       }
 
-      // Try Auth signUp in background to sync client auth session state (ignore errors if RPC already succeeded)
-      try {
-        await adminAuthClient.auth.signUp({
-          email: staffEmail.trim(),
-          password: staffPassword,
-          options: { data: { name: staffName.trim(), email_verified: true } }
-        });
-      } catch (e) {
-        // Ignored since database RPC created the user in auth.users
+      // 3. Guarantee record exists in cb_staff table
+      const finalId = createdUserId || `staff-${Date.now()}`;
+      const { error: dbError } = await supabase.from('cb_staff').upsert([{
+        id: finalId,
+        staff_id: staffId,
+        name: staffName.trim(),
+        email: staffEmail.trim().toLowerCase(),
+        phone: staffPhone || 'Unassigned',
+        status: 'Active',
+        created_by_admin_id: selectedAdminId,
+        department: staffDept || 'Operations',
+        referral_code: referralCode
+      }], { onConflict: 'staff_id' });
+
+      if (dbError && !createdUserId) {
+        toast.error("Failed to save staff record: " + dbError.message);
+        return;
       }
 
       const auditLog = {

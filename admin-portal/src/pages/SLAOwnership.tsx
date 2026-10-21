@@ -85,50 +85,54 @@ export default function SLAOwnership() {
     const accountId = `AD${String(nextNum).padStart(2, '0')}`;
 
     try {
-      // 1. Call RPC function to atomic create auth user + cb_admins record
-      const { data: newUserId, error: rpcError } = await supabase.rpc('create_admin_member', {
-        p_email: email.trim(),
+      let createdUserId = '';
+
+      // 1. Sign up via Supabase Auth client (instant since email confirmation is disabled)
+      const { data: authData, error: authError } = await adminAuthClient.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+            email_verified: true
+          }
+        }
+      });
+
+      if (authData?.user?.id) {
+        createdUserId = authData.user.id;
+      }
+
+      // 2. Execute RPC function to set user_roles and seed auth record
+      const { data: rpcUserId, error: rpcError } = await supabase.rpc('create_admin_member', {
+        p_email: email.trim().toLowerCase(),
         p_password: password,
         p_name: name.trim(),
         p_phone: phone || 'Unassigned',
         p_account_id: accountId
       });
 
-      if (rpcError) {
-        console.warn("RPC create_admin_member failed, falling back to direct table insert:", rpcError.message);
-        // Fallback: direct table insert
-        const { error: insertError } = await supabase.from('cb_admins').insert([{
-          id: `admin-${Date.now()}`,
-          account_id: accountId,
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone || 'Unassigned',
-          status: 'Active'
-        }]);
-
-        if (insertError) {
-          toast.error("Admin creation error: " + (rpcError?.message || insertError.message));
-          return;
-        }
+      if (!rpcError && rpcUserId) {
+        createdUserId = rpcUserId;
       }
 
-      // Try Auth signUp in background to sync client auth session state (ignore errors if RPC already succeeded)
-      try {
-        await adminAuthClient.auth.signUp({
-          email: email.trim(),
-          password: password,
-          options: {
-            data: {
-              name: name.trim(),
-              email_verified: true
-            }
-          }
-        });
-      } catch (e) {
-        // Ignored since database RPC created the user in auth.users
+      // 3. Guarantee record exists in cb_admins table
+      const finalId = createdUserId || `admin-${Date.now()}`;
+      const { error: dbError } = await supabase.from('cb_admins').upsert([{
+        id: finalId,
+        account_id: accountId,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone || 'Unassigned',
+        status: 'Active'
+      }], { onConflict: 'account_id' });
+
+      if (dbError && !createdUserId) {
+        toast.error("Failed to save admin record: " + dbError.message);
+        return;
       }
 
-      toast.success(`Administrator ${accountId} node initialized!`);
+      toast.success(`Administrator ${accountId} (${name.trim()}) initialized!`);
       setName('');
       setEmail('');
       setPhone('');

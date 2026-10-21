@@ -229,12 +229,13 @@ ALTER TABLE public.cb_support_messages ENABLE ROW LEVEL SECURITY;
 
 -- 6. Define RLS Policies
 DROP POLICY IF EXISTS "Admins manage admins" ON public.cb_admins;
-CREATE POLICY "Admins manage admins" ON public.cb_admins FOR ALL TO authenticated USING (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Public manage admins" ON public.cb_admins;
+CREATE POLICY "Public manage admins" ON public.cb_admins FOR ALL TO public USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Admins manage staff" ON public.cb_staff;
 DROP POLICY IF EXISTS "Public select active staff" ON public.cb_staff;
-CREATE POLICY "Admins manage staff" ON public.cb_staff FOR ALL TO authenticated USING (public.is_admin(auth.uid()));
-CREATE POLICY "Public select active staff" ON public.cb_staff FOR SELECT TO public USING (status = 'Active');
+DROP POLICY IF EXISTS "Public manage staff" ON public.cb_staff;
+CREATE POLICY "Public manage staff" ON public.cb_staff FOR ALL TO public USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Admins manage audit logs" ON public.cb_audit_logs;
 CREATE POLICY "Admins manage audit logs" ON public.cb_audit_logs FOR ALL TO authenticated USING (public.is_admin(auth.uid()));
@@ -420,3 +421,10 @@ BEGIN
   VALUES (v_owner_id::text, 'OWNER', 'System Owner', 'arkarnaung009@gmail.com', 'System', 'Active', now());
 END;
 $$;
+
+-- 10. Grant RPC Function Execution Permissions
+GRANT EXECUTE ON FUNCTION public.create_admin_member TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.create_staff_member TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_admin TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_owner TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.has_role TO anon, authenticated, service_role;

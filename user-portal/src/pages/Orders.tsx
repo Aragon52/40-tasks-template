@@ -3,6 +3,7 @@ import OrderDetailsModal from '../components/OrderDetailsModal';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 import { useLoading } from '../components/GlobalLoader';
+import { parseNumericAmount } from '../../../src/shared/numeric';
 import { 
   Package, 
   ShoppingBag, 
@@ -20,7 +21,7 @@ const toMoneyAmount = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const toCurrency = (value) => Number(toMoneyAmount(value).toFixed(2));
+const toCurrency = (value) => Number((parseNumericAmount(value) ?? 0).toFixed(2));
 const toCommission = (value) => Number((toMoneyAmount(value) * 0.1).toFixed(4));
 
 export default function Orders({ balance, orders, setOrders, updateBalance }) {
@@ -119,7 +120,12 @@ export default function Orders({ balance, orders, setOrders, updateBalance }) {
 
           const task = taskList && taskList[0];
           if (task && matchedOrder.assignedOrderIndex !== undefined && matchedOrder.assignedOrderIndex !== -1) {
-            const updatedOrders = [...task.orders];
+            const updatedOrders = task.orders.map((order: any) => ({
+              ...order,
+              price: toCurrency(order.price),
+              profit: toCurrency(order.profit),
+              ...(order.commission !== undefined ? { commission: toCurrency(order.commission) } : {})
+            }));
             const completedIdx = matchedOrder.assignedOrderIndex;
             updatedOrders[completedIdx].status = 'Success';
 

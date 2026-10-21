@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PRODUCT_CATALOG } from '../data/products';
 import { supabase } from '../supabase';
+import { parseNumericAmount } from '../../../src/shared/numeric';
 import toast from 'react-hot-toast';
 import { 
   ClipboardList, 
@@ -818,10 +819,7 @@ export default function OrdersTasking() {
   };
 
   const safeFloat = (val) => {
-    if (typeof val === 'number') return isNaN(val) ? 0 : val;
-    if (!val) return 0;
-    const parsed = parseFloat(val);
-    return isNaN(parsed) ? 0 : parsed;
+    return parseNumericAmount(val) ?? 0;
   };
 
   const handleInitiateAssignment = (e) => {
@@ -1032,12 +1030,15 @@ export default function OrdersTasking() {
     if (!editingTask) return;
     
     try {
-      const updatedOrders = editingOrders.map(o => ({
-        ...o,
-        price: parseFloat(o.price || 0),
-        profit: parseFloat(o.profit || 0),
-        commission: parseFloat(o.commission || 0)
-      }));
+      const updatedOrders = editingOrders.map((o, idx) => {
+        const price = parseNumericAmount(o.price);
+        const profit = parseNumericAmount(o.profit);
+        const commission = parseNumericAmount(o.commission ?? 0);
+        if (price === null || price < 0 || profit === null || profit < 0 || commission === null || commission < 0) {
+          throw new Error(`Order #${idx + 1} has an invalid price, profit, or commission.`);
+        }
+        return { ...o, price, profit, commission };
+      });
       
       const newTotalAmount = parseFloat(updatedOrders.reduce((sum, o) => sum + (o.price || 0), 0).toFixed(2));
       const newTotalProfit = parseFloat(updatedOrders.reduce((sum, o) => sum + (o.profit || 0), 0).toFixed(2));

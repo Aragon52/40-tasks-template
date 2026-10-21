@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PRODUCT_CATALOG } from '../data/products';
 import { supabase } from '../supabase';
+import { parseNumericAmount } from '../../../src/shared/numeric';
 import toast from 'react-hot-toast';
 import { 
   ClipboardList, 
@@ -34,8 +35,8 @@ import {
 import { Button, Modal, Card, Input, Badge } from '@/src/shared/UI';
 
 const toCents = (value: any) => {
-  const amount = Number(value);
-  return Number.isFinite(amount) ? Math.round(amount * 100) : null;
+  const amount = parseNumericAmount(value);
+  return amount === null ? null : Math.round(amount * 100);
 };
 
 const rebalanceFollowingPrices = (orders: any[], editedIndex: number, updatedPriceCents: number) => {
@@ -363,10 +364,10 @@ export default function OrdersInProgress() {
 
     for (let idx = 0; idx < editingOrders.length; idx++) {
       const o = editingOrders[idx];
-      const pPrice = parseFloat(o.price);
-      const pProfit = parseFloat(o.profit);
-      const pComm = parseFloat(o.commission !== undefined ? o.commission : 0);
-      if (isNaN(pPrice) || pPrice < 0 || isNaN(pProfit) || pProfit < 0 || isNaN(pComm) || pComm < 0) {
+      const pPrice = parseNumericAmount(o.price);
+      const pProfit = parseNumericAmount(o.profit);
+      const pComm = parseNumericAmount(o.commission ?? 0);
+      if (pPrice === null || pPrice < 0 || pProfit === null || pProfit < 0 || pComm === null || pComm < 0) {
         toast.error(`Order #${idx + 1} has invalid price, profit, or commission.`);
         return;
       }
@@ -375,9 +376,9 @@ export default function OrdersInProgress() {
     try {
       const cleanedOrders = editingOrders.map(o => ({
         ...o,
-        price: parseFloat(parseFloat(o.price || 0).toFixed(2)),
-        profit: parseFloat(parseFloat(o.profit || 0).toFixed(2)),
-        commission: parseFloat(parseFloat(o.commission || 0).toFixed(2))
+        price: Number((parseNumericAmount(o.price) ?? 0).toFixed(2)),
+        profit: Number((parseNumericAmount(o.profit) ?? 0).toFixed(2)),
+        commission: Number((parseNumericAmount(o.commission ?? 0) ?? 0).toFixed(2))
       }));
 
       const newTotalAmount = parseFloat(cleanedOrders.reduce((sum, o) => sum + parseFloat(o.price || 0), 0).toFixed(2));

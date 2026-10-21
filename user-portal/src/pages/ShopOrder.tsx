@@ -4,6 +4,7 @@ import OrderDetailsModal from '../components/OrderDetailsModal';
 import { supabase } from '../supabase';
 import { useLoading } from '../components/GlobalLoader';
 import { PRODUCT_CATALOG, TEMPLATE_M_1 } from '../data/products';
+import { parseNumericAmount } from '../../../src/shared/numeric';
 import toast from 'react-hot-toast';
 import {
   Package,
@@ -29,7 +30,7 @@ const toMoneyAmount = (value: any) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const toCurrency = (value: any) => Number(toMoneyAmount(value).toFixed(2));
+const toCurrency = (value: any) => Number((parseNumericAmount(value) ?? 0).toFixed(2));
 const toCommission = (value: any) => Number((toMoneyAmount(value) * 0.1).toFixed(4));
 
 interface ShopOrderProps {
@@ -232,9 +233,14 @@ export default function ShopOrder({ balance, updateBalance, orders, setOrders }:
 
           const task = taskList && taskList[0];
           if (task && activeOrderDetails.assignedOrderIndex !== undefined && activeOrderDetails.assignedOrderIndex !== -1) {
-            const taskOrders = Array.isArray(task.orders)
+            const taskOrders = (Array.isArray(task.orders)
               ? task.orders
-              : (typeof task.orders === 'string' ? JSON.parse(task.orders) : []);
+              : (typeof task.orders === 'string' ? JSON.parse(task.orders) : [])).map((order: any) => ({
+                ...order,
+                price: toCurrency(order.price),
+                profit: toCurrency(order.profit),
+                ...(order.commission !== undefined ? { commission: toCurrency(order.commission) } : {})
+              }));
             
             const completedIdx = activeOrderDetails.assignedOrderIndex;
             if (taskOrders[completedIdx]) {

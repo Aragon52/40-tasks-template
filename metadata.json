@@ -1,0 +1,8 @@
+{
+  "name": "40task-readytopush-template",
+  "description": "Template app with fresh database",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

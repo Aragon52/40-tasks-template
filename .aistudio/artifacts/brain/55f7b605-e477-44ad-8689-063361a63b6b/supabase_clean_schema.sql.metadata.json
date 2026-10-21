@@ -1,0 +1,5 @@
+{
+  "summary":  "Complete, clean Supabase database schema SQL script including all tables, RLS security policies, helper functions, and RPCs for replicating the application with clean data.",
+  "updatedAt":  "2026-10-21T03:06:34.871533769Z",
+  "userFacing":  true
+}

@@ -1,0 +1,1 @@
+ALTER TABLE public.cb_deposits ADD COLUMN IF NOT EXISTS remark TEXT;

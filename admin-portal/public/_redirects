@@ -1,0 +1,24 @@
+# Direct static assets pass-through
+https://admin.walmark-retailshop.com/assets/*   /assets/:splat        200
+http://admin.walmark-retailshop.com/assets/*    /assets/:splat        200
+/assets/*                                       /assets/:splat        200
+/favicon.svg                                    /favicon.svg          200
+/icons.svg                                      /icons.svg            200
+/icon-192.png                                   /icon-192.png         200
+/icon-512.png                                   /icon-512.png         200
+/version.json                                   /version.json         200
+/sw.js                                          /sw.js                200
+
+# Admin production subdomain rewrites (HTTP & HTTPS)
+https://admin.walmark-retailshop.com/*          /admin.html           200!
+http://admin.walmark-retailshop.com/*           /admin.html           200!
+https://admin.walmark-retailshop.com            /admin.html           200!
+http://admin.walmark-retailshop.com             /admin.html           200!
+
+# Admin path rewrites (for walmark-retailshop.com/admin or localhost/admin)
+/admin.html                                     /admin.html           200
+/admin                                          /admin.html           200
+/admin/*                                        /admin.html           200
+
+# Default SPA rewrite for user portal
+/*                                              /index.html           200
